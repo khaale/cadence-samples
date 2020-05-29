@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"time"
 
 	"go.uber.org/cadence/encoded"
 	"go.uber.org/cadence/worker"
@@ -14,6 +16,8 @@ import (
 	"go.uber.org/cadence/.gen/go/cadence/workflowserviceclient"
 	"go.uber.org/cadence/client"
 	"gopkg.in/yaml.v2"
+
+	promreporter "github.com/uber-go/tally/prometheus"
 )
 
 const (
@@ -34,9 +38,10 @@ type (
 
 	// Configuration for running samples.
 	Configuration struct {
-		DomainName      string `yaml:"domain"`
-		ServiceName     string `yaml:"service"`
-		HostNameAndPort string `yaml:"host"`
+		DomainName         string `yaml:"domain"`
+		ServiceName        string `yaml:"service"`
+		HostNameAndPort    string `yaml:"host"`
+		ParallelActivities int    `yaml:"parallel-activities"`
 	}
 )
 
@@ -57,14 +62,16 @@ func (h *SampleHelper) SetupServiceConfig() {
 	}
 
 	// Initialize logger for running samples
-	logger, err := zap.NewDevelopment()
+	logger, err := zap.NewProduction()
 	if err != nil {
 		panic(err)
 	}
 
+	h.Scope = tally.NoopScope
+
 	logger.Info("Logger created.")
 	h.Logger = logger
-	h.Scope = tally.NoopScope
+
 	h.Builder = NewBuilder(logger).
 		SetHostPort(h.Config.HostNameAndPort).
 		SetDomain(h.Config.DomainName).
@@ -77,13 +84,49 @@ func (h *SampleHelper) SetupServiceConfig() {
 	}
 	h.Service = service
 
-	domainClient, _ := h.Builder.BuildCadenceDomainClient()
-	_, err = domainClient.Describe(context.Background(), h.Config.DomainName)
-	if err != nil {
-		logger.Info("Domain doesn't exist", zap.String("Domain", h.Config.DomainName), zap.Error(err))
-	} else {
-		logger.Info("Domain successfully registered.", zap.String("Domain", h.Config.DomainName))
-	}
+	//domainClient, _ := h.Builder.BuildCadenceDomainClient()
+	//_, err = domainClient.Describe(context.Background(), h.Config.DomainName)
+	//if err != nil {
+	//		logger.Info("Domain doesn't exist", zap.String("Domain", h.Config.DomainName), zap.Error(err))
+	//	} else {
+	//		logger.Info("Domain successfully registered.", zap.String("Domain", h.Config.DomainName))
+	//	}
+}
+
+func (h *SampleHelper) SetupMetrics(port int) {
+	var (
+		_safeCharacters  = []rune{'_'}
+		_sanitizeOptions = tally.SanitizeOptions{
+			NameCharacters: tally.ValidCharacters{
+				Ranges:     tally.AlphanumericRange,
+				Characters: _safeCharacters,
+			},
+			KeyCharacters: tally.ValidCharacters{
+				Ranges:     tally.AlphanumericRange,
+				Characters: _safeCharacters,
+			},
+			ValueCharacters: tally.ValidCharacters{
+				Ranges:     tally.AlphanumericRange,
+				Characters: _safeCharacters,
+			},
+			ReplacementCharacter: tally.DefaultReplacementCharacter,
+		}
+	)
+
+	r := promreporter.NewReporter(promreporter.Options{})
+	// Note: `promreporter.DefaultSeparator` is "_".
+	// Prometheus doesnt like metrics with "." or "-" in them.
+	scope, _ := tally.NewRootScope(tally.ScopeOptions{
+		Prefix:          "helloworld",
+		Tags:            map[string]string{},
+		CachedReporter:  r,
+		Separator:       promreporter.DefaultSeparator,
+		SanitizeOptions: &_sanitizeOptions,
+	}, 1*time.Second)
+	http.Handle("/metrics", r.HTTPHandler())
+	go http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	h.Scope = scope
+	h.Logger.Info(fmt.Sprintf("Metrics published on localhost:%d/metrics", port))
 }
 
 // StartWorkflow starts a workflow
@@ -105,7 +148,7 @@ func (h *SampleHelper) StartWorkflowWithCtx(ctx context.Context, options client.
 		panic("Failed to create workflow.")
 
 	} else {
-		h.Logger.Info("Started Workflow", zap.String("WorkflowID", we.ID), zap.String("RunID", we.RunID))
+		h.Logger.Debug("Started Workflow", zap.String("WorkflowID", we.ID), zap.String("RunID", we.RunID))
 	}
 }
 

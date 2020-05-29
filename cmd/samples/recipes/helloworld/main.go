@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/pborman/uuid"
@@ -25,19 +27,30 @@ func startWorkflow(h *common.SampleHelper) {
 	workflowOptions := client.StartWorkflowOptions{
 		ID:                              "helloworld_" + uuid.New(),
 		TaskList:                        ApplicationName,
-		ExecutionStartToCloseTimeout:    time.Minute,
-		DecisionTaskStartToCloseTimeout: time.Minute,
+		ExecutionStartToCloseTimeout:    time.Minute * 20,
+		DecisionTaskStartToCloseTimeout: time.Minute * 20,
 	}
-	h.StartWorkflow(workflowOptions, Workflow, "Cadence")
+	h.StartWorkflow(workflowOptions, Workflow, h.Config.ParallelActivities)
+}
+
+func runWebServer(h *common.SampleHelper) {
+	http.HandleFunc("/run", func(w http.ResponseWriter, r *http.Request) {
+		startWorkflow(h)
+		fmt.Fprintf(w, "Workflow started.")
+	})
+	http.ListenAndServe(":80", nil)
 }
 
 func main() {
 	var mode string
-	flag.StringVar(&mode, "m", "trigger", "Mode is worker or trigger.")
+	flag.StringVar(&mode, "m", "trigger", "Mode is worker or trigger or launcher.")
+	var metricsPort int
+	flag.IntVar(&metricsPort, "p", 8080, "Port for exposing metrics")
 	flag.Parse()
 
 	var h common.SampleHelper
 	h.SetupServiceConfig()
+	h.SetupMetrics(metricsPort)
 
 	switch mode {
 	case "worker":
@@ -48,5 +61,7 @@ func main() {
 		select {}
 	case "trigger":
 		startWorkflow(&h)
+	case "launcher":
+		runWebServer(&h)
 	}
 }

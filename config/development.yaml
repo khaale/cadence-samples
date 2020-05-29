@@ -2,3 +2,4 @@
 domain: "samples-domain"
 service: "cadence-frontend"
 host: "127.0.0.1:7933"
+parallel-activities: 10
