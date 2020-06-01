@@ -24,7 +24,30 @@ func startWorkers(h *common.SampleHelper) {
 	workerOptions := worker.Options{
 		MetricsScope: h.Scope,
 		Logger:       h.Logger,
+		// From yaml config
+		MaxConcurrentActivityExecutionSize:      h.Config.WorkerOptions.MaxConcurrentActivityExecutionSize,
+		WorkerActivitiesPerSecond:               h.Config.WorkerOptions.WorkerActivitiesPerSecond,
+		MaxConcurrentLocalActivityExecutionSize: h.Config.WorkerOptions.MaxConcurrentLocalActivityExecutionSize,
+		WorkerLocalActivitiesPerSecond:          h.Config.WorkerOptions.WorkerLocalActivitiesPerSecond,
+		TaskListActivitiesPerSecond:             h.Config.WorkerOptions.TaskListActivitiesPerSecond,
+		MaxConcurrentActivityTaskPollers:        h.Config.WorkerOptions.MaxConcurrentActivityTaskPollers,
+		MaxConcurrentDecisionTaskExecutionSize:  h.Config.WorkerOptions.MaxConcurrentDecisionTaskExecutionSize,
+		WorkerDecisionTasksPerSecond:            h.Config.WorkerOptions.WorkerDecisionTasksPerSecond,
+		MaxConcurrentDecisionTaskPollers:        h.Config.WorkerOptions.MaxConcurrentDecisionTaskPollers,
+		AutoHeartBeat:                           h.Config.WorkerOptions.AutoHeartBeat,
+		Identity:                                h.Config.WorkerOptions.Identity,
+		EnableLoggingInReplay:                   h.Config.WorkerOptions.EnableLoggingInReplay,
+		DisableWorkflowWorker:                   h.Config.WorkerOptions.DisableWorkflowWorker,
+		DisableActivityWorker:                   h.Config.WorkerOptions.DisableActivityWorker,
+		DisableStickyExecution:                  h.Config.WorkerOptions.DisableStickyExecution,
+		StickyScheduleToStartTimeout:            h.Config.WorkerOptions.StickyScheduleToStartTimeout,
+		WorkerStopTimeout:                       h.Config.WorkerOptions.WorkerStopTimeout,
+		EnableSessionWorker:                     h.Config.WorkerOptions.EnableSessionWorker,
+		MaxConcurrentSessionExecutionSize:       h.Config.WorkerOptions.MaxConcurrentSessionExecutionSize,
 	}
+	h.Logger.Info(fmt.Sprintf("Worker options: %v", h.Config.WorkerOptions))
+	h.Logger.Info(fmt.Sprintf("Worker options: %v", workerOptions))
+
 	for i := 0; i < h.Config.TaskListCount; i++ {
 		h.StartWorkers(
 			h.Config.DomainName,

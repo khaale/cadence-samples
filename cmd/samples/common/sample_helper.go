@@ -38,11 +38,34 @@ type (
 
 	// Configuration for running samples.
 	Configuration struct {
-		DomainName         string `yaml:"domain"`
-		ServiceName        string `yaml:"service"`
-		HostNameAndPort    string `yaml:"host"`
-		ParallelActivities int    `yaml:"parallel-activities"`
-		TaskListCount      int    `yaml:"task-list-count"`
+		DomainName         string                     `yaml:"domain"`
+		ServiceName        string                     `yaml:"service"`
+		HostNameAndPort    string                     `yaml:"host"`
+		ParallelActivities int                        `yaml:"parallel-activities"`
+		TaskListCount      int                        `yaml:"task-list-count"`
+		WorkerOptions      WorkerOptionsConfiguration `yaml:"worker-options"`
+	}
+
+	WorkerOptionsConfiguration struct {
+		MaxConcurrentActivityExecutionSize      int           `yaml:"MaxConcurrentActivityExecutionSize"`
+		WorkerActivitiesPerSecond               float64       `yaml:"WorkerActivitiesPerSecond"`
+		MaxConcurrentLocalActivityExecutionSize int           `yaml:"MaxConcurrentLocalActivityExecutionSize"`
+		WorkerLocalActivitiesPerSecond          float64       `yaml:"WorkerLocalActivitiesPerSecond"`
+		TaskListActivitiesPerSecond             float64       `yaml:"TaskListActivitiesPerSecond"`
+		MaxConcurrentActivityTaskPollers        int           `yaml:"MaxConcurrentActivityTaskPollers"`
+		MaxConcurrentDecisionTaskExecutionSize  int           `yaml:"MaxConcurrentDecisionTaskExecutionSize"`
+		WorkerDecisionTasksPerSecond            float64       `yaml:"WorkerDecisionTasksPerSecond"`
+		MaxConcurrentDecisionTaskPollers        int           `yaml:"MaxConcurrentDecisionTaskPollers"`
+		AutoHeartBeat                           bool          `yaml:"AutoHeartBeat"`
+		Identity                                string        `yaml:"Identity"`
+		EnableLoggingInReplay                   bool          `yaml:"EnableLoggingInReplay"`
+		DisableWorkflowWorker                   bool          `yaml:"DisableWorkflowWorker"`
+		DisableActivityWorker                   bool          `yaml:"DisableActivityWorker"`
+		DisableStickyExecution                  bool          `yaml:"DisableStickyExecution"`
+		StickyScheduleToStartTimeout            time.Duration `yaml:"StickyScheduleToStartTimeout"`
+		WorkerStopTimeout                       time.Duration `yaml:"WorkerStopTimeout"`
+		EnableSessionWorker                     bool          `yaml:"EnableSessionWorker"`
+		MaxConcurrentSessionExecutionSize       int           `yaml:"MaxConcurrentSessionExecutionSize"`
 	}
 )
 

@@ -4,3 +4,6 @@ service: "cadence-helloworld"
 host: "localhost:7933"
 parallel-activities: 1
 task-list-count: 1
+worker-options:
+    MaxConcurrentActivityTaskPollers: 10
+    MaxConcurrentDecisionTaskPollers: 10
