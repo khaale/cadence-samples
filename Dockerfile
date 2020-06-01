@@ -4,18 +4,27 @@ FROM golang:latest as gobuild
 #RUN mkdir /app
 
 WORKDIR /go/src/project/
-COPY . /go/src/project/
+
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+
+COPY /cmd/samples/ /go/src/project/cmd/samples/
 
 WORKDIR /go/src/project/cmd/samples/recipes/helloworld
 RUN go build -o .
 
 
 # This results in a single layer image
-FROM scratch
-COPY --from=gobuild /go/src/project/cmd/samples/recipes/helloworld /bin/project
-COPY config/development.yaml /bin/project/config
-RUN chmod a+rwx /bin/project
-ENTRYPOINT ["/bin/project"]
-CMD ["--help"]
+FROM debian
+COPY --from=gobuild /go/src/project/cmd/samples/recipes/helloworld/helloworld /goapp
+COPY /config/ /config/
+RUN chmod -R 777 /goapp
 
-EXPOSE 80 8080 8082
+USER appuser:appuser
+
+#RUN ls -l /config
+ENTRYPOINT ["/goapp"]
+#CMD ["--help"]
+
+EXPOSE 8080 8081

@@ -42,6 +42,7 @@ type (
 		ServiceName        string `yaml:"service"`
 		HostNameAndPort    string `yaml:"host"`
 		ParallelActivities int    `yaml:"parallel-activities"`
+		TaskListCount      int    `yaml:"task-list-count"`
 	}
 )
 
@@ -117,7 +118,7 @@ func (h *SampleHelper) SetupMetrics(port int) {
 	// Note: `promreporter.DefaultSeparator` is "_".
 	// Prometheus doesnt like metrics with "." or "-" in them.
 	scope, _ := tally.NewRootScope(tally.ScopeOptions{
-		Prefix:          "helloworld",
+		//Prefix:          "helloworld",
 		Tags:            map[string]string{},
 		CachedReporter:  r,
 		Separator:       promreporter.DefaultSeparator,
